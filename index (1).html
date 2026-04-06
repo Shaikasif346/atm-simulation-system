@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATM Simulation System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Courier New', monospace;
+    background: #0a0a0a;
+    color: #00ff88;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+    color: #00ff88;
+    text-align: center;
+    margin: 20px 0 4px;
+    letter-spacing: 2px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: #555;
+    text-align: center;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+  }
+
+  .atm-body {
+    width: 100%;
+    max-width: 520px;
+    background: #111;
+    border: 1px solid #1f1f1f;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .screen {
+    background: #050e05;
+    border-bottom: 1px solid #1a1a1a;
+    padding: 16px 18px;
+    min-height: 130px;
+  }
+
+  .screen-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .screen-label {
+    font-size: 10px;
+    color: #2a4a2a;
+    letter-spacing: 1px;
+  }
+
+  .blink {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #00ff88;
+    animation: blink 1.2s infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  #output {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #00ff88;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .output-error { color: #ff4444; }
+  .output-success { color: #00ff88; }
+  .output-info { color: #ffcc00; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .stat {
+    padding: 10px 14px;
+    border-right: 1px solid #1a1a1a;
+  }
+  .stat:last-child { border-right: none; }
+  .stat-label { font-size: 9px; color: #333; letter-spacing: 0.5px; }
+  .stat-val { font-size: 15px; color: #00ff88; font-weight: bold; }
+
+  .menu-section { padding: 14px; }
+
+  .menu-title {
+    font-size: 10px;
+    color: #333;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .menu-btn {
+    background: #161616;
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #aaa;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Courier New', monospace;
+    transition: all 0.15s;
+  }
+
+  .menu-btn:hover { background: #1e1e1e; border-color: #00ff88; color: #00ff88; }
+  .menu-btn.active { border-color: #00ff88; color: #00ff88; background: #0a1a0a; }
+
+  .form-panel {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .form-panel.show { display: flex; }
+
+  .form-panel label {
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 0.5px;
+  }
+
+  .form-panel input {
+    background: #0d0d0d;
+    border: 1px solid #222;
+    border-radius: 5px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: #00ff88;
+    font-family: 'Courier New', monospace;
+    width: 100%;
+    outline: none;
+    transition: border 0.15s;
+  }
+
+  .form-panel input:focus { border-color: #00ff88; }
+
+  .btn-row { display: flex; gap: 8px; }
+
+  .go-btn {
+    flex: 1;
+    background: #00ff88;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .go-btn:hover { background: #00cc6a; }
+
+  .back-btn {
+    background: transparent;
+    border: 1px solid #222;
+    border-radius: 5px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #444;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    transition: all 0.15s;
+  }
+  .back-btn:hover { border-color: #555; color: #888; }
+
+  .accounts-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .acc-row {
+    background: #0d0d0d;
+    border: 1px solid #1a1a1a;
+    border-radius: 5px;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: border 0.15s;
+  }
+  .acc-row:hover { border-color: #00ff88; }
+  .acc-name { font-size: 13px; color: #ccc; }
+  .acc-no { font-size: 10px; color: #444; margin-top: 2px; }
+  .acc-bal { font-size: 14px; color: #00ff88; font-weight: bold; }
+
+  .footer {
+    text-align: center;
+    font-size: 10px;
+    color: #1f1f1f;
+    padding: 12px;
+    border-top: 1px solid #1a1a1a;
+    letter-spacing: 0.5px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-right: 4px;
+  }
+  .tag-java { background: #1a1200; color: #ffcc00; border: 1px solid #332200; }
+  .tag-oop  { background: #001a0a; color: #00ff88; border: 1px solid #003310; }
+
+  .github-link {
+    display: inline-block;
+    margin: 12px auto 0;
+    padding: 8px 20px;
+    background: transparent;
+    border: 1px solid #222;
+    border-radius: 5px;
+    color: #555;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+  .github-link:hover { border-color: #00ff88; color: #00ff88; }
+</style>
+</head>
+<body>
+
+<h1>ATM SIMULATION SYSTEM</h1>
+
+<div class="atm-body">
+
+  <div class="screen">
+    <div class="screen-top">
+      <span class="screen-label">SYSTEM OUTPUT</span>
+      <div class="blink"></div>
+    </div>
+    <div id="output">Welcome to ATM Simulation System.
+Demo accounts loaded:
+  ACC1001 — Asif Khan       Rs.55,000.00
+  ACC1002 — Priya Sharma    Rs.28,000.00
+
+Select an operation from the menu.</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-label">ACCOUNTS</div>
+      <div class="stat-val" id="stat-count">2</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">TOTAL BALANCE</div>
+      <div class="stat-val" id="stat-bal">Rs.83,000</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">TRANSACTIONS</div>
+      <div class="stat-val" id="stat-txn">5</div>
+    </div>
+  </div>
+
+  <div class="menu-section">
+    <div class="menu-title">SELECT OPERATION</div>
+
+    <div class="menu-grid" id="main-menu">
+      <button class="menu-btn" onclick="show('create')">1. Create Account</button>
+      <button class="menu-btn" onclick="show('deposit')">2. Deposit Money</button>
+      <button class="menu-btn" onclick="show('withdraw')">3. Withdraw Money</button>
+      <button class="menu-btn" onclick="show('balance')">4. Check Balance</button>
+      <button class="menu-btn" onclick="show('history')">5. Transaction History</button>
+      <button class="menu-btn" onclick="listAll()">6. List All Accounts</button>
+    </div>
+
+    <div class="form-panel" id="form-create">
+      <label>ACCOUNT HOLDER NAME</label>
+      <input id="f-name" placeholder="e.g. Rahul Verma" />
+      <label>INITIAL DEPOSIT (Rs.)</label>
+      <input id="f-init" type="number" placeholder="0" min="0" />
+      <div class="btn-row">
+        <button class="go-btn" onclick="doCreate()">CREATE ACCOUNT</button>
+        <button class="back-btn" onclick="goBack()">Back</button>
+      </div>
+    </div>
+
+    <div class="form-panel" id="form-deposit">
+      <label>ACCOUNT NUMBER</label>
+      <div class="accounts-list" id="dep-accs"></div>
+      <input id="f-dep-acc" placeholder="or type e.g. ACC1001" />
+      <label>DEPOSIT AMOUNT (Rs.)</label>
+      <input id="f-dep-amt" type="number" placeholder="e.g. 5000" min="1" />
+      <div class="btn-row">
+        <button class="go-btn" onclick="doDeposit()">DEPOSIT</button>
+        <button class="back-btn" onclick="goBack()">Back</button>
+      </div>
+    </div>
+
+    <div class="form-panel" id="form-withdraw">
+      <label>ACCOUNT NUMBER</label>
+      <div class="accounts-list" id="wd-accs"></div>
+      <input id="f-wd-acc" placeholder="or type e.g. ACC1001" />
+      <label>WITHDRAWAL AMOUNT (Rs.)</label>
+      <input id="f-wd-amt" type="number" placeholder="e.g. 2000" min="1" />
+      <div class="btn-row">
+        <button class="go-btn" onclick="doWithdraw()">WITHDRAW</button>
+        <button class="back-btn" onclick="goBack()">Back</button>
+      </div>
+    </div>
+
+    <div class="form-panel" id="form-balance">
+      <label>ACCOUNT NUMBER</label>
+      <div class="accounts-list" id="bal-accs"></div>
+      <input id="f-bal-acc" placeholder="or type e.g. ACC1001" />
+      <div class="btn-row">
+        <button class="go-btn" onclick="doBalance()">CHECK BALANCE</button>
+        <button class="back-btn" onclick="goBack()">Back</button>
+      </div>
+    </div>
+
+    <div class="form-panel" id="form-history">
+      <label>ACCOUNT NUMBER</label>
+      <div class="accounts-list" id="hist-accs"></div>
+      <input id="f-hist-acc" placeholder="or type e.g. ACC1001" />
+      <div class="btn-row">
+        <button class="go-btn" onclick="doHistory()">VIEW HISTORY</button>
+        <button class="back-btn" onclick="goBack()">Back</button>
+      </div>
+    </div>
+
+  </div>
+
+
+</div>
+
+
+<script>
+const accounts = new Map();
+let counter = 1002;
+let totalTxn = 5;
+
+function rs(n) {
+  return 'Rs.' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function makeAcc(no, name, bal) {
+  return { no, name, balance: bal, history: [] };
+}
+
+const a1 = makeAcc('ACC1001', 'Asif Khan', 55000);
+a1.history = [
+  'Account created with initial balance: Rs.50,000.00',
+  'Deposited: Rs.10,000.00  |  Balance: Rs.60,000.00',
+  'Withdrawn: Rs.5,000.00   |  Balance: Rs.55,000.00'
+];
+accounts.set('ACC1001', a1);
+
+const a2 = makeAcc('ACC1002', 'Priya Sharma', 28000);
+a2.history = [
+  'Account created with initial balance: Rs.25,000.00',
+  'Deposited: Rs.3,000.00   |  Balance: Rs.28,000.00'
+];
+accounts.set('ACC1002', a2);
+
+function updateStats() {
+  document.getElementById('stat-count').textContent = accounts.size;
+  let total = 0;
+  accounts.forEach(a => total += a.balance);
+  document.getElementById('stat-bal').textContent = 'Rs.' + Math.round(total).toLocaleString('en-IN');
+  document.getElementById('stat-txn').textContent = totalTxn;
+}
+
+function out(msg, type) {
+  const el = document.getElementById('output');
+  el.className = type ? 'output-' + type : '';
+  el.textContent = msg;
+}
+
+function show(id) {
+  document.getElementById('main-menu').style.display = 'none';
+  document.querySelectorAll('.form-panel').forEach(f => f.classList.remove('show'));
+  document.getElementById('form-' + id).classList.add('show');
+  renderAccList(id);
+  out('Fill in the form below and press the button.');
+}
+
+function renderAccList(id) {
+  const targets = { deposit: 'dep', withdraw: 'wd', balance: 'bal', history: 'hist' };
+  const prefix = targets[id];
+  if (!prefix) return;
+  const container = document.getElementById(prefix + '-accs');
+  if (!container) return;
+  container.innerHTML = '';
+  accounts.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'acc-row';
+    row.innerHTML = `<div><div class="acc-name">${a.name}</div><div class="acc-no">${a.no}</div></div><div class="acc-bal">${rs(a.balance)}</div>`;
+    row.onclick = () => {
+      const inp = document.getElementById('f-' + prefix + '-acc');
+      if (inp) inp.value = a.no;
+    };
+    container.appendChild(row);
+  });
+}
+
+function goBack() {
+  document.getElementById('main-menu').style.display = 'grid';
+  document.querySelectorAll('.form-panel').forEach(f => f.classList.remove('show'));
+  out('Welcome back. Select an operation.');
+}
+
+function doCreate() {
+  const name = document.getElementById('f-name').value.trim();
+  const init = parseFloat(document.getElementById('f-init').value) || 0;
+  if (!name) { out('ERROR: Account holder name cannot be empty.', 'error'); return; }
+  if (init < 0) { out('ERROR: Initial deposit cannot be negative.', 'error'); return; }
+  const no = 'ACC' + (++counter);
+  const acc = makeAcc(no, name, init);
+  acc.history.push('Account created with initial balance: ' + rs(init));
+  accounts.set(no, acc);
+  totalTxn++;
+  updateStats();
+  out(`Account created successfully!\n\nAccount Number : ${no}\nAccount Holder : ${name}\nInitial Balance: ${rs(init)}\n\nPlease remember your Account Number: ${no}`, 'success');
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-init').value = '';
+}
+
+function doDeposit() {
+  const accNo = document.getElementById('f-dep-acc').value.trim().toUpperCase();
+  const amt = parseFloat(document.getElementById('f-dep-amt').value);
+  if (!accounts.has(accNo)) { out('ERROR: AccountNotFoundException\nNo account found with account number: ' + accNo, 'error'); return; }
+  if (!amt || amt <= 0) { out('ERROR: InvalidAmountException\nDeposit amount must be greater than zero.', 'error'); return; }
+  const acc = accounts.get(accNo);
+  acc.balance += amt;
+  acc.history.push('Deposited: ' + rs(amt) + '  |  Balance: ' + rs(acc.balance));
+  totalTxn++;
+  updateStats();
+  out(`${rs(amt)} deposited successfully.\nUpdated Balance: ${rs(acc.balance)}\n\nAccount : ${accNo}\nHolder  : ${acc.name}`, 'success');
+  document.getElementById('f-dep-amt').value = '';
+}
+
+function doWithdraw() {
+  const accNo = document.getElementById('f-wd-acc').value.trim().toUpperCase();
+  const amt = parseFloat(document.getElementById('f-wd-amt').value);
+  if (!accounts.has(accNo)) { out('ERROR: AccountNotFoundException\nNo account found with account number: ' + accNo, 'error'); return; }
+  if (!amt || amt <= 0) { out('ERROR: InvalidAmountException\nWithdrawal amount must be greater than zero.', 'error'); return; }
+  const acc = accounts.get(accNo);
+  if (amt > acc.balance) {
+    out(`ERROR: InsufficientBalanceException\nInsufficient balance!\nAvailable : ${rs(acc.balance)}\nRequested : ${rs(amt)}\n\nWithdrawal denied.`, 'error');
+    return;
+  }
+  acc.balance -= amt;
+  acc.history.push('Withdrawn: ' + rs(amt) + '  |  Balance: ' + rs(acc.balance));
+  totalTxn++;
+  updateStats();
+  out(`${rs(amt)} withdrawn successfully.\nUpdated Balance: ${rs(acc.balance)}\n\nAccount : ${accNo}\nHolder  : ${acc.name}`, 'success');
+  document.getElementById('f-wd-amt').value = '';
+}
+
+function doBalance() {
+  const accNo = document.getElementById('f-bal-acc').value.trim().toUpperCase();
+  if (!accounts.has(accNo)) { out('ERROR: AccountNotFoundException\nNo account found with account number: ' + accNo, 'error'); return; }
+  const acc = accounts.get(accNo);
+  out(`--- Balance Check ---\n\nAccount Holder : ${acc.name}\nAccount Number : ${acc.no}\nCurrent Balance: ${rs(acc.balance)}`, 'info');
+}
+
+function doHistory() {
+  const accNo = document.getElementById('f-hist-acc').value.trim().toUpperCase();
+  if (!accounts.has(accNo)) { out('ERROR: AccountNotFoundException\nNo account found with account number: ' + accNo, 'error'); return; }
+  const acc = accounts.get(accNo);
+  let lines = `--- Transaction History for Account: ${accNo} ---\n\n`;
+  acc.history.forEach((h, i) => { lines += `${i + 1}. ${h}\n`; });
+  lines += `\n--- Total transactions: ${acc.history.length} ---`;
+  out(lines, 'info');
+}
+
+function listAll() {
+  let lines = `--- All Accounts (${accounts.size}) ---\n\n`;
+  accounts.forEach(a => {
+    lines += `${a.no}   ${a.name.padEnd(18)} ${rs(a.balance)}\n`;
+  });
+  out(lines, 'info');
+}
+
+updateStats();
+</script>
+</body>
+</html>
